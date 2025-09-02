@@ -4,14 +4,18 @@ cc = cc
 CFLAGS = -Wall -Wextra -Werror
 RM = rm -f
 NAME = philosopher
-SRCS = main.c
+SRCS = GNU_example.c
 OBJECTS = $(SRCS:.c=.o)
 #FILES
 #TARGETS
+
 all: $NAME
 
+%.o: %.c
+	$(cc) $(CFLAGS) -c $< -o $@
+
 $NAME: main.o
-	$(cc) $(CFLAGS) -o $(NAME) main.o -lpthread
+	$(cc) $(CFLAGS) -o $(NAME) $(OBJECTS) -lpthread
 
 clean: 
 	$(RM) $(OBJECTS)
