@@ -6,25 +6,20 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/05 12:47:08 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/09/05 12:56:19 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/09/05 18:30:40 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosopher.h"
 
-
-
-
-
-
 static init(int *values, t_philo *philos);
 
 int main(int argc, char **argv)
 {
-	int     values[5];
-	t_philo philo[];
-	pthread_t thread_id[N];
-	pthread_attr_t attr;
+	int				values[5];
+	t_philo			philo[N];
+	pthread_t		thread_id[N];
+	pthread_attr_t	attr;
 	int				i;
 
 	ft_pthread_attr_init(&attr);
@@ -42,10 +37,12 @@ int main(int argc, char **argv)
 
 static init(int *values, t_philo *philos)
 {
-	int num_philos;
+	int	num_philos;
+	int	i;
 
 	num_philos = values[0];
-	for (int i = 0; i < num_philos; i++)
+	i = -1;
+	while (++i < num_philos)
 	{
 		philos[i].id = i + 1;
 		philos[i].time_to_die = values[1];
@@ -63,3 +60,4 @@ static init(int *values, t_philo *philos)
 		philos[i].thread = NULL;
 	}
 }
+
