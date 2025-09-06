@@ -2,11 +2,6 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   routine.c                                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/09/06 18:56:22 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/09/06 19:26:52 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,13 +48,25 @@ static void	mark_pending_and_request_slot(t_philo *ph)
 	waiter_take_slot(ph);
 }
 
+static bool	has_reached_quota(t_philo *ph)
+{
+	bool	done;
+
+	if (ph->sim->meals_required <= 0)
+		return (false);
+	pthread_mutex_lock(&ph->sim->state);
+	done = (ph->meals_eaten >= ph->sim->meals_required);
+	pthread_mutex_unlock(&ph->sim->state);
+	return (done);
+}
+
 static void	post_eat_updates(t_philo *ph)
 {
 	pthread_mutex_lock(&ph->sim->state);
 	ph->meals_eaten++;
 	DBG(ph->sim, ph->id, "meal", "meals_eaten=%d", ph->meals_eaten);
 	if (ph->sim->meals_required > 0
-		&& ph->meals_eaten >= ph->sim->meals_required)
+		&& ph->meals_eaten == ph->sim->meals_required)
 	{
 		ph->sim->finished++;
 		DBG(ph->sim, ph->id, "meal", "finished=%d/%d",
@@ -109,6 +116,8 @@ static bool	eat_once(t_philo *ph)
 
 static bool	philo_cycle(t_philo *ph)
 {
+	if (has_reached_quota(ph))
+		return (false);
 	log_status(ph->sim, ph->id, "is thinking");
 	mark_pending_and_request_slot(ph);
 	if (!eat_once(ph))

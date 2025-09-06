@@ -42,7 +42,8 @@ void *trythis(void *arg) {
     return (NULL);
 }
 
-int main() {
+int main()
+{
     t_proc          proc;
     int             err;
     int             i;
