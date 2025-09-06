@@ -2,6 +2,11 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   waiters.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/06 19:49:02 by dlesieur          #+#    #+#             */
+/*   Updated: 2025/09/06 19:49:04 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,11 +98,17 @@ static int	can_grant_under_cap_locked(t_sim *sim)
 	int	cap;
 	int	in_use;
 
-	base = (sim->num_philos > 1) ? (sim->num_philos - 1) : 1;
+	if (sim->num_philos > 1)
+		base = sim->num_philos - 1;
+	else
+		base = 1;
 	active = sim->num_philos - sim->finished;
 	if (active < 1)
 		active = 1;
-	cap = (active > 1) ? (active - 1) : 1;
+	if (active > 1)
+		cap = active - 1;
+	else
+		cap = 1;
 	in_use = base - sim->slots;
 	return (in_use < cap);
 }
@@ -115,10 +126,7 @@ static int	handle_available_locked(t_sim *sim, int id)
 	}
 	ensure_next_valid_locked(sim);
 	if (compute_allow(sim, id))
-	{
-		grant_slot_and_unlock(sim, id);
-		return (1);
-	}
+		return (grant_slot_and_unlock(sim,id), 1);
 	DBG(sim, id, "waiter", "DENY (slots=%d,next=%d,pending[next]=%d)",
 		sim->slots, sim->next_id, sim->pending[sim->next_id - 1]);
 	return (0);
@@ -129,10 +137,7 @@ static int	waiter_try_iteration(t_sim *sim, int id)
 {
 	pthread_mutex_lock(&sim->slot);
 	if (sim_get_stop(sim))
-	{
-		pthread_mutex_unlock(&sim->slot);
-		return (1);
-	}
+		return (pthread_mutex_unlock(&sim->slot), 1);
 	if (urgent_blocks(sim, id))
 		DBG(sim, id, "waiter", "blocked by urgent=%d (slots=%d,next=%d)",
 			sim->urgent_id, sim->slots, sim->next_id);

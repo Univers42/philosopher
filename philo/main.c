@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/06 18:52:40 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/09/06 18:54:28 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/09/06 19:51:20 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,14 @@
 
 void	philo_init(int *values, t_philo *philos, t_sim *sim)
 {
-	int	num_philos = values[0];
+	int	num_philos;
 	int	i = 0;
+	int	minp;
+	int	maxp;
+	int	mid;
+	struct sched_param p;
 
+	num_philos = values[0];
 	while (i < num_philos)
 	{
 		philos[i].id = i + 1;
@@ -33,10 +38,9 @@ void	philo_init(int *values, t_philo *philos, t_sim *sim)
 		philos[i].thread = NULL;
 		philos[i].sim = sim;
 		{
-			struct sched_param p;
-			int minp = sched_get_priority_min(SCHED_RR);
-			int maxp = sched_get_priority_max(SCHED_RR);
-			int mid = minp + (maxp - minp) / 2;
+			minp = sched_get_priority_min(SCHED_RR);
+			maxp = sched_get_priority_max(SCHED_RR);
+			mid = minp + (maxp - minp) / 2;
 			ft_pthread_attr_init(&philos[i].attr);
 			ft_pthread_attr_setschedpolicy(&philos[i].attr, SCHED_RR);
 			ft_pthread_attr_setinheritsched(&philos[i].attr, PTHREAD_EXPLICIT_SCHED);

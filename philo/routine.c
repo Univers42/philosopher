@@ -2,6 +2,11 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   routine.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/06 19:49:32 by dlesieur          #+#    #+#             */
+/*   Updated: 2025/09/06 19:50:09 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,9 +147,7 @@ void	*philo_routine(void *arg)
 	if (has_one_philo(ph))
 		return (NULL);
 	while (!sim_get_stop(ph->sim))
-	{
 		if (!philo_cycle(ph))
 			break ;
-	}
 	return (NULL);
 }

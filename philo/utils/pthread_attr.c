@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/05 12:47:13 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/09/05 19:40:27 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/09/06 19:59:04 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,11 +24,17 @@ typedef struct s_attr_node {
 	struct s_attr_node		*next;
 }	t_attr_node;
 
-static t_attr_node	*g_attr_list = NULL;
+// Replace global list with a singleton accessor
+static t_attr_node	**attr_list(void)
+{
+	static t_attr_node	*head = NULL;
+
+	return (&head);
+}
 
 static t_pthread_attr *attr_find(const pthread_attr_t *key)
 {
-	t_attr_node *n = g_attr_list;
+	t_attr_node *n = *attr_list();
 
 	while (n)
 	{
@@ -55,34 +61,35 @@ static void	attr_set_defaults(t_pthread_attr *a)
 static t_pthread_attr *attr_ensure(pthread_attr_t *key)
 {
 	t_attr_node *n;
+	t_attr_node **headp;
 
 	n = (t_attr_node *)malloc(sizeof(*n));
 	if (!n)
 		return (NULL);
 	n->key = key;
 	attr_set_defaults(&n->val);
-	n->next = g_attr_list;
-	g_attr_list = n;
+	headp = attr_list();
+	n->next = *headp;
+	*headp = n;
 	return (&n->val);
 }
 
 static int	attr_remove(pthread_attr_t *key)
 {
-	t_attr_node *prev = NULL;
-	t_attr_node *cur = g_attr_list;
+	t_attr_node **pp;
+	t_attr_node *cur;
 
+	pp = attr_list();
+	cur = *pp;
 	while (cur)
 	{
 		if (cur->key == key)
 		{
-			if (prev)
-				prev->next = cur->next;
-			else
-				g_attr_list = cur->next;
+			*pp = cur->next;
 			free(cur);
 			return (0);
 		}
-		prev = cur;
+		pp = &cur->next;
 		cur = cur->next;
 	}
 	return (EINVAL);
