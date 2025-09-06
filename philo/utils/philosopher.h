@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/05 12:47:11 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/09/05 20:41:48 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/09/06 19:03:05 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,8 +35,8 @@
 #define ATTR_TO_INTERNAL(attr) ((t_pthread_attr*)(attr))
 
 // Default values
-#define DEFAULT_STACK_SIZE (2 * 1024 * 1024)	// 2MB
-#define DEFAULT_GUARD_SIZE 4096					// Usually page size
+#define DEFAULT_STACK_SIZE (2 * 1024 * 1024)
+#define DEFAULT_GUARD_SIZE 4096
 
 typedef struct s_philo	t_philo;
 
@@ -132,13 +132,23 @@ int		ft_pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate
 
 // timing/logging helpers
 long	get_time_ms(void);
-long	get_time_us(void);                // added
+long	get_time_us(void);
 void	ft_usleep_ms(long ms, t_sim *sim);
 void	log_status(t_sim *sim, int id, const char *msg);
 void	death_timing_log(int id, long expected_ms, long actual_ms,
-			long delta_ms);               // added
-int		sim_get_stop(t_sim *sim);        // added
-void	sim_set_stop(t_sim *sim);        // added
+			long delta_ms);
+int		sim_get_stop(t_sim *sim);
+void	sim_set_stop(t_sim *sim);
+void	philo_init(int *values, t_philo *philos, t_sim *sim);
+void	*philo_routine(void *arg);
+void	waiter_give_slot(t_sim *sim);
+void	waiter_take_slot(t_philo *ph);
+void	report_fork_violation(t_sim *sim, int fork_idx, int current, int attempted);
+void	mark_fork_acquire(t_philo *p, int fork_idx);
+void	mark_fork_release(t_philo *p, int fork_idx);
+void	lock_forks(t_philo *p);
+void	unlock_forks(t_philo *p);
+int		best_pending_by_priority(t_sim *sim);
 
 // Debug logger (enabled with -DDEBUG)
 void	dbg(t_sim *sim, int id, const char *tag, const char *fmt, ...);

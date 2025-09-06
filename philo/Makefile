@@ -21,7 +21,11 @@ endif
 SRCS := \
 	utils/philo.c \
 	utils/helpers.c \
-	utils/pthread_attr.c
+	utils/pthread_attr.c \
+	main.c \
+	routine.c \
+	waiters.c\
+	ctr_lock.c
 
 OBJS := $(SRCS:.c=.o)
 
