@@ -47,17 +47,23 @@ static bool	check_death(t_monitor *mon, t_philosopher *philos)
 	uint64_t	time_since_meal;
 	int			died_id;
 
+	(void)philos;
 	pthread_mutex_lock(&mon->lock);
 	now = timestamp_ms();
 	died_id = -1;
 	i = -1;
 	while (++i < mon->num_philos)
 	{
-		time_since_meal = now - philos[i].last_meal;
+		time_since_meal = now - mon->last_meal[i];
 		if (time_since_meal > mon->args.time_to_die)
 		{
 			mon->simulation_end = true;
 			died_id = i;
+			// DEBUG: Print timing info
+			fprintf(stderr, "DEBUG: Philo %d died - now=%llu last_meal=%llu diff=%llu limit=%llu state=%d\n",
+				i + 1, (unsigned long long)now, (unsigned long long)mon->last_meal[i],
+				(unsigned long long)time_since_meal, (unsigned long long)mon->args.time_to_die,
+				mon->state[i]);
 			break;
 		}
 	}
@@ -85,11 +91,6 @@ static void	*philosopher_routine(void *arg)
 		pthread_cond_wait(&mon->start_cond, &mon->start_lock);
 	pthread_mutex_unlock(&mon->start_lock);
 
-	// Initialize last_meal at start
-	pthread_mutex_lock(&mon->lock);
-	philo->last_meal = mon->start_time;
-	pthread_mutex_unlock(&mon->lock);
-
 	// Stagger just a bit to reduce contention
 	if (philo->id % 2 == 1)
 		usleep(100);
@@ -97,7 +98,7 @@ static void	*philosopher_routine(void *arg)
 	should_exit = false;
 	while (!should_exit)
 	{
-		// Check termination conditions
+		// Termination check
 		pthread_mutex_lock(&mon->lock);
 		should_exit = mon->simulation_end
 			|| (mon->args.nb_dish > 0 && philo->meals_eaten >= mon->args.nb_dish);
@@ -109,19 +110,24 @@ static void	*philosopher_routine(void *arg)
 
 		take_forks(mon, philo->id);
 
-		// Check again after forks
 		pthread_mutex_lock(&mon->lock);
 		if (mon->simulation_end)
 		{
 			pthread_mutex_unlock(&mon->lock);
 			break;
 		}
-		philo->last_meal = timestamp_ms();
+		if (mon->state[philo->id] != EATING)
+		{
+			pthread_mutex_unlock(&mon->lock);
+			continue;
+		}
+		// last_meal already updated in test() when entering EATING
 		pthread_mutex_unlock(&mon->lock);
 
 		precise_sleep(mon->args.time_to_eat);
 
 		pthread_mutex_lock(&mon->lock);
+		// No last_meal update here anymore
 		philo->meals_eaten++;
 		pthread_mutex_unlock(&mon->lock);
 
@@ -150,15 +156,16 @@ static int	run_simulation(t_monitor *mon)
 	start = timestamp_ms();
 	pthread_mutex_lock(&mon->lock);
 	mon->start_time = start;
+	for (i = 0; i < mon->num_philos; ++i)
+		mon->last_meal[i] = start; // baseline: full window at boot
 	pthread_mutex_unlock(&mon->lock);
 
-	// Prepare philosopher structs and set last_meal to start (prevent 0-diffs)
+	// Prepare philosopher structs
 	i = -1;
 	while (++i < mon->num_philos)
 	{
 		philos[i].id = i;
 		philos[i].monitor = mon;
-		philos[i].last_meal = start;     // critical to avoid immediate deaths
 		philos[i].meals_eaten = 0;
 	}
 
@@ -197,7 +204,7 @@ static int	run_simulation(t_monitor *mon)
 		if (ended)
 			break;
 
-		usleep(1000);
+		usleep(5000); // Check every 5ms instead of 1ms (reduces overhead)
 		if (check_death(mon, philos))
 			break;
 		if (all_philosophers_fed(mon, philos))
