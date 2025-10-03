@@ -1,25 +1,5 @@
 #include "philo.h"
 
-static bool	parse_args(t_args *args, int argc, const char **argv)
-{
-	if (argc < 5 || argc > 6)
-		return (false);
-	args->nfork = ft_strto_uchar(argv[1], NULL, 10);
-	args->time_to_die = ft_strtou64(argv[2], NULL, 10);
-	args->time_to_eat = ft_strtou64(argv[3], NULL, 10);
-	args->time_to_sleep = ft_strtou64(argv[4], NULL, 10);
-	if (argv[5])
-		args->nb_dish = ft_strto_uint(argv[5], NULL, 10);
-	else
-		args->nb_dish = 0;
-	if (args->nfork == 0 || args->nfork > 200)
-		return (false);
-	if (args->time_to_eat < 60 || args->time_to_die < 60 
-		|| args->time_to_sleep < 60)
-		return (false);
-	return (true);
-}
-
 static bool	all_philosophers_fed(t_monitor *mon, t_philosopher *philos)
 {
 	int	i;

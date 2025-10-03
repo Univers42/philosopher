@@ -3,7 +3,6 @@ To prevent racing conditions we need to appropriately lock/unlock with mutexes b
 writing or reading shared variables.
 This way we prevent race conditions and ensures thread_safety
 */
-
 void	set_stop(t_ctx *ctx, int value)
 {
 	pthread_mutex_lock(&ctx->dead);
