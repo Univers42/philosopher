@@ -78,6 +78,10 @@ typedef enum e_philo_state
 	EATING
 }	t_philo_state;
 
+// Forward declare philosopher to allow pointer in t_ctx
+typedef struct s_philo t_philo;
+
+// Context shared by threads (only via protected fields)
 typedef struct s_ctx
 {
 	// Config
@@ -87,9 +91,8 @@ typedef struct s_ctx
 	t_time			sleep; 			// time to sleep
 	t_qty			m_eat;
 	// Timing
-	t_time		start_t;   			// simulation start timestamp
-	// Shared resources
-	t_mutex			*forks;     	// array of fork mutexes
+	t_time			start_t;   			// simulation start timestamp
+	t_mutex			*forks;     	// pointer for dynamic allocation
 	t_mutex			write_mutex;
 	t_mutex			dead;
 	t_mutex			time_eat;
@@ -102,8 +105,15 @@ typedef struct s_ctx
 	pthread_cond_t  start_cond;
 	t_flag			started;
 	t_flag			debug;
-}   t_ctx;
 
+	// Add pointer to philosophers for monitor access
+	t_philo			*philos;
+
+	// Waiter: limit concurrent eat attempts to reduce starvation
+	t_mutex         seats_lock;
+	pthread_cond_t  seats_cond;
+	int             seats_avail;
+}   t_ctx;
 
 typedef struct s_philo
 {
@@ -117,30 +127,40 @@ typedef struct s_philo
 	t_ctx			*ctx;           // Pointer to shared context
 }   t_philo;
 
-// MONITOR HELPERS
-t_monitor		*monitor_init(t_args args);
-void			monitor_destroy(t_monitor *mon);
-void			activity(t_philo *ph);
-t_time			current_time(void);
+// Remove undefined monitor APIs and keep only what we implement
 
 // PRINTERS
 int				check_death(t_philo *ph, int i);
 void			write_status(const char *str, t_philo *ph);
-void			print_status(t_monitor *mon, int philo_id, const char *status);
 
 // UTILS
 size_t			ft_strlen(const char *s);
-void			ft_putstr_fd(char *s, int fd);
-void			ft_usleep(t_time ms);
+void			ft_putchar_fd(char c, int fd);
+void			ft_putstr_fd(const char *s, int fd);
+void			ft_putnbr_fd(long n, int fd);
 t_flag			ft_exit(const char *str);
-t_uint8			ft_strto_uchar(const char *nptr, char **endptr, int base);
+uint8_t			ft_strto_uchar(const char *nptr, char **endptr, int base);
 t_time			ft_strtou64(const char *nptr, char **endptr, int base);
 unsigned int	ft_strto_uint(const char *nptr, char **endptr, int base);
-void			precise_sleep(t_time ms);
-t_time			timestamp_ms(void);
+t_time			get_time(void);
+t_time			precise_sleep(t_time ms);
 
-// HELPERS
-void			take_forks(t_monitor *mon, int philo_id);
-void			put_forks(t_monitor *mon, int philo_id);
+// SAFE ACCESSORS
+void			set_stop(t_ctx *ctx, int value);
+int				get_stop(t_ctx *ctx);
+void			increment_nb_p_finish(t_ctx *ctx);
+t_qty			get_nb_p_finish(t_ctx *ctx);
+
+// WAITER
+void			waiter_acquire(t_ctx *ctx);
+void			waiter_release(t_ctx *ctx);
+
+// INIT
+void			init_ctx(t_ctx *ctx, int argc, char **argv);
+int				init_philosophers(t_ctx *ctx, t_philo **philos);
+
+// ROUTINES
+void			*philo_routine(void *arg);
+void			*death_checker(void *arg);
 
 #endif

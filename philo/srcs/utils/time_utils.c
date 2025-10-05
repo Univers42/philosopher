@@ -1,60 +1,47 @@
 #include "philo.h"
 
-uint64_t	current_time()
+// Returns current time in milliseconds
+t_time	get_time(void)
 {
-	uint64_t		time;
-	struct timeval	cur_time;
-
-	time = 0;
-	if (gettimeofday(&cur_time, NULL) == -1)
-		ft_exit("Gettimeofday returned - 1\n");
-	time = (cur_time.tv_sec * 1000) + (cur_time.tv_usec / 1000);
-	return (time);
+	struct timeval	time;
+	gettimeofday(&time, NULL);
+	return ((t_time)time.tv_sec * 1000 + (t_time)time.tv_usec / 1000);
 }
 
-// Get current timestamp in milliseconds
-uint64_t	timestamp_ms(void)
+t_time	chrono_sum(t_time start, t_time delay)
 {
-	struct timeval	tv;
-
-	gettimeofday(&tv, NULL);
-	return ((uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec / 1000);
+	return (start + delay);
 }
 
+t_time	chrono_diff(t_time most_recent)
+{
+	return (get_time() - most_recent);
+}
 
 /**
 usleep is not precise, it may overlap
 this is a time checking loop instead of raw sleep
+@return current sleep duration
 */
-void	precise_sleep(uint64_t ms)
+t_time	precise_sleep(t_time ms)
 {
-	uint64_t	start;
-	uint64_t	elapsed;
-	uint64_t	remaining;
+    t_time	start;
+    t_time	elapsed;
+    t_time	remaining;
 
-	start = timestamp_ms();
-	while (1)
-	{
-		elapsed = timestamp_ms() - start;
-		if (elapsed >= ms)
-			break;
-		remaining = ms - elapsed;
-		// Use shorter intervals as we approach the target
-		if (remaining > 10)
-			usleep(5000); // 5ms when far from target
-		else if (remaining > 2)
-			usleep(1000); // 1ms when closer
-		else
-			usleep(100);  // 100μs for final precision
-	}
+    start = get_time();
+    while (1)
+    {
+        elapsed = get_time() - start;
+        if (elapsed >= ms)
+            break;
+        remaining = ms - elapsed;
+        if (remaining > 10)
+            usleep(5000);
+        else if (remaining > 2)
+            usleep(1000);
+        else
+            usleep(100);
+    }
+    return (elapsed);
 }
-
-void	ft_usleep(uint64_t	ms)
-{
-	uint64_t	start;
-
-	start = current_time();
-	while ((current_time - start) < time_in_ms)
-		usleep(time_in_ms / 10);
-}
-

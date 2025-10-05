@@ -1,17 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "philo.h"
 
 size_t	ft_strlen(const char *s)
 {
-	const char *tmp = s;
+	const char *p = s;
 
-	while (*tmp++)
-		;
-	return (tmp - s - 1);
+	while (*p)
+		p++;
+	return (size_t)(p - s);
 }
 
 void	ft_putchar_fd(char c, int fd)
@@ -21,64 +18,31 @@ void	ft_putchar_fd(char c, int fd)
 
 void    ft_putstr_fd(const char *s, int fd)
 {
-	write(1, s, ft_strlen(s));
+	if (!s)
+		return;
+	write(fd, s, ft_strlen(s));
 }
 
 void	ft_putnbr_fd(long n, int fd)
 {
-	static char	buf[32];
-	static int	i;
-	int			local_start;
+	char	buf[32];
+	int		i = 0;
+	long	tmp = n;
 
-	local_start = 0;
-	if (i == 0)
-		local_start = 1;
 	if (n == LONG_MIN)
-	{
-		write(fd, "-9223372036854775808", 20);
-		i = 0;
-		return ;
-	}
+		return (write(fd, "-9223372036854775808", 20), (void)0);
 	if (n < 0)
 	{
-		buf[i++] = '-';
-		n = -n;
+		ft_putchar_fd('-', fd);
+		tmp = -n;
 	}
-	if (n >= 10)
-		ft_putnbr_fd(n / 10, fd);
-	buf[i++] = (n % 10) + '0';
-	if (local_start)
+	if (tmp == 0)
+		return (ft_putchar_fd('0', fd), (void)0);
+	while (tmp)
 	{
-		write(fd, buf, i);
-		i = 0;
+		buf[i++] = (char)('0' + (tmp % 10));
+		tmp /= 10;
 	}
-}
-
-// Print philosopher status with timestamp, guarded by print_lock only
-void	print_status(t_monitor *mon, int philo_id, const char *status)
-{
-	uint64_t	elapsed;
-	bool		is_death;
-
-	elapsed = timestamp_ms() - mon->start_time;
-	is_death = (strcmp(status, "died") == 0);
-
-	pthread_mutex_lock(&mon->print_lock);
-	if (mon->print_stopped && !is_death)
-	{
-		pthread_mutex_unlock(&mon->print_lock);
-		return;
-	}
-	if (is_death)
-		mon->print_stopped = true;
-	printf("%llu %d %s\n", (unsigned long long)elapsed, philo_id + 1, status);
-	pthread_mutex_unlock(&mon->print_lock);
-}
-
-__attribute__((weak))
-int main(void)
-{
-	ft_putnbr_fd(-121321352416511223, 1);
-	ft_putchar_fd('\n', 1);
-	return (0);
+	while (i--)
+		ft_putchar_fd(buf[i], fd);
 }

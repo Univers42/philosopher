@@ -1,37 +1,36 @@
 NAME    = philo
 CC      = cc
-CFLAGS  = -Wall -Wextra -Werror -pthread -I.
+CFLAGS  = -Wall -Wextra -Werror -pthread -Iinc
 
-UTILSDIR := utils/
-CUR_DIR  := .
-OBJDIR   := obj/
+OBJDIR  := obj
 
-SRCS = $(addprefix $(UTILSDIR), strtoull.c monitor.c time_utils.c precise_sleep.c)
-SRCS += $(addprefix $(CUR_DIR)/, main.c)
+SRCS = \
+	srcs/main.c \
+	srcs/helpers/init.c \
+	srcs/helpers/safe_thread_methods.c \
+	srcs/helpers/safe_thread_check.c \
+	srcs/routines.c \
+	srcs/utils/time_utils.c \
+	srcs/utils/util_str.c \
+	srcs/utils/strtoull.c \
+	srcs/utils/ft_exit.c
 
-# turn "utils/foo.c" into "obj/foo.o"
-OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(notdir $(SRCS)))
+OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 
-# compile utils/*.c
-$(OBJDIR)/%.o: $(UTILSDIR)%.c
-	mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# compile files in current dir
-$(OBJDIR)/%.o: $(CUR_DIR)/%.c
-	mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+$(OBJDIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJDIR)
+	@rm -rf $(OBJDIR)
 
 fclean: clean
-	rm -f $(NAME)
+	@rm -f $(NAME)
 
 re: fclean all
 

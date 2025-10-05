@@ -1,234 +1,91 @@
 #include "philo.h"
 
-static bool	all_philosophers_fed(t_monitor *mon, t_philosopher *philos)
+static int	init_forks(t_ctx *ctx)
 {
-	int	i;
+	int i;
 
-	if (mon->args.nb_dish == 0)
-		return (false);
-	pthread_mutex_lock(&mon->lock);
-	i = -1;
-	while (++i < mon->num_philos)
-	{
-		if (philos[i].meals_eaten < mon->args.nb_dish)
-		{
-			pthread_mutex_unlock(&mon->lock);
-			return (false);
-		}
-	}
-	pthread_mutex_unlock(&mon->lock);
-	return (true);
+	ctx->forks = (t_mutex *)malloc(sizeof(t_mutex) * ctx->total);
+	if (!ctx->forks)
+		return (ST_ERR_MALLOC);
+	for (i = 0; i < (int)ctx->total; i++)
+		pthread_mutex_init(&ctx->forks[i], NULL);
+	return (ST_OK);
 }
 
-static bool	check_death(t_monitor *mon, t_philosopher *philos)
+static void	cleanup(t_ctx *ctx, t_philo *philos)
 {
-	int			i;
-	uint64_t	now;
-	uint64_t	time_since_meal;
-	int			died_id;
+	int i;
 
-	(void)philos;
-	pthread_mutex_lock(&mon->lock);
-	now = timestamp_ms();
-	died_id = -1;
-	i = -1;
-	while (++i < mon->num_philos)
+	if (philos)
 	{
-		time_since_meal = now - mon->last_meal[i];
-		if (time_since_meal > mon->args.time_to_die)
-		{
-			mon->simulation_end = true;
-			died_id = i;
-			// DEBUG: Print timing info
-			fprintf(stderr, "DEBUG: Philo %d died - now=%llu last_meal=%llu diff=%llu limit=%llu state=%d\n",
-				i + 1, (unsigned long long)now, (unsigned long long)mon->last_meal[i],
-				(unsigned long long)time_since_meal, (unsigned long long)mon->args.time_to_die,
-				mon->state[i]);
-			break;
-		}
+		for (i = 0; i < (int)ctx->total; i++)
+			pthread_mutex_destroy(&philos[i].eating_mutex);
+		free(philos);
 	}
-	pthread_mutex_unlock(&mon->lock);
-	if (died_id != -1)
+	if (ctx->forks)
 	{
-		print_status(mon, died_id, "died");
-		return (true);
+		for (i = 0; i < (int)ctx->total; i++)
+			pthread_mutex_destroy(&ctx->forks[i]);
+		free(ctx->forks);
 	}
-	return (false);
+	pthread_mutex_destroy(&ctx->write_mutex);
+	pthread_mutex_destroy(&ctx->dead);
+	pthread_mutex_destroy(&ctx->time_eat);
+	pthread_mutex_destroy(&ctx->finish);
+	pthread_mutex_destroy(&ctx->start_lock);
+	pthread_cond_destroy(&ctx->start_cond);
+	// destroy waiter primitives
+	pthread_mutex_destroy(&ctx->seats_lock);
+	pthread_cond_destroy(&ctx->seats_cond);
 }
 
-static void	*philosopher_routine(void *arg)
+int main(int argc, char **argv)
 {
-	t_philosopher	*philo;
-	t_monitor		*mon;
-	bool			should_exit;
+	t_ctx	ctx;
+	t_philo	*philos = NULL;
+	int		i;
 
-	philo = (t_philosopher *)arg;
-	mon = philo->monitor;
+	if (argc < 5 || argc > 6)
+		return (ft_exit(MSG_ARGS_KO));
+	memset(&ctx, 0, sizeof(ctx));
+	init_ctx(&ctx, argc, argv);
+	if (ctx.total == 0 || ctx.total > MAX_PHILOS || ctx.eat < MIN_MS
+		|| ctx.sleep < MIN_MS || ctx.die < MIN_MS)
+		return (ft_exit(MSG_ARGS_KO));
+	if (init_forks(&ctx) != ST_OK)
+		return (ft_exit("malloc forks failed\n"));
+	if (init_philosophers(&ctx, &philos) != ST_OK)
+		return (ft_exit("malloc philos failed\n"));
 
-	// Wait for global start
-	pthread_mutex_lock(&mon->start_lock);
-	while (!mon->started)
-		pthread_cond_wait(&mon->start_cond, &mon->start_lock);
-	pthread_mutex_unlock(&mon->start_lock);
+	// Set start time and initialize last_meal BEFORE creating threads
+	ctx.start_t = get_time();
+	for (i = 0; i < (int)ctx.total; i++)
+		philos[i].last_meal = ctx.start_t;
 
-	// Stagger just a bit to reduce contention
-	if (philo->id % 2 == 1)
-		usleep(100);
+	// Create philosopher threads (they will all wait at the barrier)
+	for (i = 0; i < (int)ctx.total; i++)
+		pthread_create(&philos[i].thread_id, NULL, philo_routine, &philos[i]);
 
-	should_exit = false;
-	while (!should_exit)
-	{
-		// Termination check
-		pthread_mutex_lock(&mon->lock);
-		should_exit = mon->simulation_end
-			|| (mon->args.nb_dish > 0 && philo->meals_eaten >= mon->args.nb_dish);
-		pthread_mutex_unlock(&mon->lock);
-		if (should_exit)
-			break;
+	// Give threads a moment to reach the barrier
+	usleep(5000);
 
-		print_status(mon, philo->id, "is thinking");
+	// Signal all threads to start simultaneously
+	pthread_mutex_lock(&ctx.start_lock);
+	ctx.started = 1;
+	pthread_cond_broadcast(&ctx.start_cond);
+	pthread_mutex_unlock(&ctx.start_lock);
 
-		take_forks(mon, philo->id);
+	// Start monitor with a grace period to allow initial eating attempts
+	usleep(10000); // 10ms grace period
+	pthread_create(&ctx.monitor_thread, NULL, death_checker, &ctx);
 
-		pthread_mutex_lock(&mon->lock);
-		if (mon->simulation_end)
-		{
-			pthread_mutex_unlock(&mon->lock);
-			break;
-		}
-		if (mon->state[philo->id] != EATING)
-		{
-			pthread_mutex_unlock(&mon->lock);
-			continue;
-		}
-		// last_meal already updated in test() when entering EATING
-		pthread_mutex_unlock(&mon->lock);
+	// Join philosophers
+	for (i = 0; i < (int)ctx.total; i++)
+		pthread_join(philos[i].thread_id, NULL);
 
-		precise_sleep(mon->args.time_to_eat);
+	// Join monitor
+	pthread_join(ctx.monitor_thread, NULL);
 
-		pthread_mutex_lock(&mon->lock);
-		// No last_meal update here anymore
-		philo->meals_eaten++;
-		pthread_mutex_unlock(&mon->lock);
-
-		put_forks(mon, philo->id);
-
-		print_status(mon, philo->id, "is sleeping");
-		precise_sleep(mon->args.time_to_sleep);
-	}
-	return (NULL);
-}
-
-static int	run_simulation(t_monitor *mon)
-{
-	pthread_t		*threads;
-	t_philosopher	*philos;
-	int				i;
-	bool			ended;
-	uint64_t		start;
-
-	threads = malloc(sizeof(pthread_t) * mon->num_philos);
-	philos = malloc(sizeof(t_philosopher) * mon->num_philos);
-	if (!threads || !philos)
-		return (EXIT_FAILURE);
-
-	// Compute common start time and pre-initialize last_meal for all
-	start = timestamp_ms();
-	pthread_mutex_lock(&mon->lock);
-	mon->start_time = start;
-	for (i = 0; i < mon->num_philos; ++i)
-		mon->last_meal[i] = start; // baseline: full window at boot
-	pthread_mutex_unlock(&mon->lock);
-
-	// Prepare philosopher structs
-	i = -1;
-	while (++i < mon->num_philos)
-	{
-		philos[i].id = i;
-		philos[i].monitor = mon;
-		philos[i].meals_eaten = 0;
-	}
-
-	// Create all threads
-	i = -1;
-	while (++i < mon->num_philos)
-	{
-		if (pthread_create(&threads[i], NULL, philosopher_routine, &philos[i]) != 0)
-		{
-			pthread_mutex_lock(&mon->lock);
-			mon->simulation_end = true;
-			pthread_mutex_unlock(&mon->lock);
-			break;
-		}
-	}
-
-	// Arm the start barrier
-	pthread_mutex_lock(&mon->start_lock);
-	mon->started = true;
-	pthread_cond_broadcast(&mon->start_cond);
-	pthread_mutex_unlock(&mon->start_lock);
-
-	// Wait until started before monitor loop
-	// (cheap check: at this point it's already true, but keeps semantics clear)
-	pthread_mutex_lock(&mon->start_lock);
-	while (!mon->started)
-		pthread_cond_wait(&mon->start_cond, &mon->start_lock);
-	pthread_mutex_unlock(&mon->start_lock);
-
-	// Monitor loop (protect simulation_end access)
-	for (;;)
-	{
-		pthread_mutex_lock(&mon->lock);
-		ended = mon->simulation_end;
-		pthread_mutex_unlock(&mon->lock);
-		if (ended)
-			break;
-
-		usleep(5000); // Check every 5ms instead of 1ms (reduces overhead)
-		if (check_death(mon, philos))
-			break;
-		if (all_philosophers_fed(mon, philos))
-		{
-			pthread_mutex_lock(&mon->lock);
-			mon->simulation_end = true;
-			pthread_mutex_unlock(&mon->lock);
-			break;
-		}
-	}
-
-	// Wake up all waiting philosophers
-	pthread_mutex_lock(&mon->lock);
-	i = -1;
-	while (++i < mon->num_philos)
-		pthread_cond_broadcast(&mon->philo_cond[i]);
-	pthread_mutex_unlock(&mon->lock);
-
-	// Join all threads
-	i = -1;
-	while (++i < mon->num_philos)
-		pthread_join(threads[i], NULL);
-
-	free(threads);
-	free(philos);
-	return (EXIT_SUCCESS);
-}
-
-int	main(int argc, const char **argv)
-{
-	t_args		args;
-	t_monitor	*mon;
-	int			ret;
-
-	if (!parse_args(&args, argc, argv))
-	{
-		printf("Error: Invalid arguments\n");
-		printf("Usage: %s number_of_philosophers time_to_die time_to_eat time_to_sleep [number_of_times_each_philosopher_must_eat]\n", argv[0]);
-		return (EXIT_FAILURE);
-	}
-	mon = monitor_init(args);
-	if (!mon)
-		return (EXIT_FAILURE);
-	ret = run_simulation(mon);
-	monitor_destroy(mon);
-	return (ret);
+	cleanup(&ctx, philos);
+	return (0);
 }
