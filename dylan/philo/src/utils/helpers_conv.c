@@ -6,19 +6,19 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:06:34 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 19:09:14 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/05 20:45:35 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "conv.h"
 
 // Get type information
-const t_type_info *get_type_info(t_int_type type)
+const t_type_info	*get_type_info(t_int_type type)
 {
-	const t_type_info *g_type_info_table = type_info_table();
+	const t_type_info	*g_type_info_table = type_info_table();
 
 	if (type >= 0 && type < TYPE_INFO_COUNT)
-		return &g_type_info_table[type];
+		return (&g_type_info_table[type]);
 	return (NULL);
 }
 
@@ -39,7 +39,7 @@ int	char_to_digit(char c, int base)
 }
 
 // Initialize conversion context
-void	init_conv_ctx(t_conv_ctx *ctx, const char *nptr, char **endptr, 
+void	init_conv_ctx(t_conv_ctx *ctx, const char *nptr, char **endptr,
 							int base, t_int_type type)
 {
 	ctx->ptr = nptr;

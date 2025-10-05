@@ -10,12 +10,19 @@ SRCS = \
 		src/utils/ft_stdlib.c \
 		src/utils/ft_string.c \
 		src/utils/ft_time.c \
-		src/utils/ft_stdlib_stub1.c\
-		src/utils/ft_stdlib_stub2.c\
-		src/utils/ft_stdlib_stub3.c\
-		src/utils/ft_stdlib_stub4.c\
+		src/utils/ft_memory.c \
+		src/utils/ft_stdlib_stub1.c \
+		src/utils/ft_stdlib_stub2.c \
+		src/utils/ft_stdlib_stub3.c \
+		src/utils/ft_stdlib_stub4.c \
 		src/utils/helpers_conv.c \
 		src/utils/states_conv.c \
+		src/helper_thread/init.c \
+		src/helper_thread/actions.c \
+		src/helper_thread/checking.c \
+		src/helper_thread/helper1.c \
+		src/helper_thread/debug.c \
+		src/routines.c \
 		src/main.c
 
 OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)

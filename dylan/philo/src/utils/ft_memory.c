@@ -1,52 +1,45 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_ctype.c                                         :+:      :+:    :+:   */
+/*   ft_memory.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/05 14:09:52 by dlesieur          #+#    #+#             */
+/*   Created: 2025/10/05 20:47:07 by dlesieur          #+#    #+#             */
 /*   Updated: 2025/10/06 00:16:22 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdbool.h>
+#include "philo.h"
 
-int	ft_isspace(int c)
+void	*ft_memcpy(void *dst, const void *src, size_t n)
 {
-	return (c == ' ' || (c >= 8 && c <= 13));
+	unsigned char		*d;
+	const unsigned char	*s;
+
+	if (!dst || !src)
+		return (dst);
+	d = (unsigned char *)dst;
+	s = (const unsigned char *)src;
+	while (n--)
+		*d++ = *s++;
+	return (dst);
 }
 
-int	ft_isdigit(int c)
+void	ft_swap(void *a, void *b, size_t n)
 {
-	return (c >= '0' && c <= '9');
-}
+	unsigned char	*pa;
+	unsigned char	*pb;
+	unsigned char	tmp;
 
-int	ft_isalpha(int c)
-{
-	return ((c >= 'a' && c <= 'z')
-		|| (c >= 'A' && c <= 'Z'));
-}
-
-int	ft_is_number(const char *str)
-{
-	const char	*cur = str;
-
-	while (*cur)
+	if (!a || !b || a == b)
+		return ;
+	pa = (unsigned char *)a;
+	pb = (unsigned char *)b;
+	while (n--)
 	{
-		if (!ft_isdigit(*cur))
-			return (false);
-		cur++;
+		tmp = *pa;
+		*pa++ = *pb;
+		*pb++ = tmp;
 	}
-	return (true);
 }
-
-// __attribute__((weak))
-// int	main(int argc, char **argv)
-// {
-// 	(void)argc;
-// 	(void)argv;
-// 	return (0);
-// }

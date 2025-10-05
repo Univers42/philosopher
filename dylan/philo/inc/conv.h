@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:07:50 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 19:09:52 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/06 00:17:01 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,12 @@
 # include <stdint.h>
 # include <stddef.h>
 # include <ctype.h>
-# include "philo.h"
-# include <stddef.h>
 # include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
-# include <stdbool.h>
 # include <errno.h>
-# include <stdint.h>
-# include <limits.h>
 # include <inttypes.h>
-
+# include <string.h>
 // Type identifiers for generic conversion
 typedef enum e_int_type
 {
@@ -53,7 +48,6 @@ typedef enum e_int_type
 }	t_int_type;
 
 // Conversion state machine states
-// Replace the enum to include INIT, BASE_PREFIX, OVERFLOW.
 typedef enum e_conv
 {
 	CONV_STATE_INIT = 0,
@@ -66,16 +60,20 @@ typedef enum e_conv
 	CONV_STATE_ERROR
 }	t_conv;
 
-// Provide STATE_* aliases used in ft_stdlib.c
-#define STATE_INIT         CONV_STATE_INIT
-#define STATE_WHITESPACE   CONV_STATE_WHITESPACE
-#define STATE_SIGN         CONV_STATE_SIGN
-#define STATE_BASE_PREFIX  CONV_STATE_BASE_PREFIX
-#define STATE_DIGITS       CONV_STATE_DIGITS
-#define STATE_OVERFLOW     CONV_STATE_OVERFLOW
-#define STATE_DONE         CONV_STATE_DONE
-#define STATE_ERROR        CONV_STATE_ERROR
-#define TYPE_INFO_COUNT		18
+// Aliases used in code
+# define STATE_INIT         CONV_STATE_INIT
+# define STATE_WHITESPACE   CONV_STATE_WHITESPACE
+# define STATE_SIGN         CONV_STATE_SIGN
+# define STATE_BASE_PREFIX  CONV_STATE_BASE_PREFIX
+# define STATE_DIGITS       CONV_STATE_DIGITS
+# define STATE_OVERFLOW     CONV_STATE_OVERFLOW
+# define STATE_DONE         CONV_STATE_DONE
+# define STATE_ERROR        CONV_STATE_ERROR
+
+// Number of states in the table
+# define CONV_STATE_COUNT   8
+# define TYPE_INFO_COUNT    18
+
 // Compact type info table row: rename fields to match ft_stdlib.c
 typedef struct s_type_info
 {
@@ -84,6 +82,9 @@ typedef struct s_type_info
 	bool				is_signed;
 }	t_type_info;
 
+// Forward-declare context for the function pointer type
+struct s_conv_ctx;
+typedef void (*t_fn_state)(struct s_conv_ctx *);
 
 // Conversion context (state machine data)
 typedef struct s_conv_ctx
@@ -105,8 +106,7 @@ typedef struct s_conv_ctx
 # define TYPE_LONG_LONG TYPE_LLONG
 #endif
 
-// Return the static table pointer (fixed: use an array, 
-// not a pointer with a struct literal).
+// Return the static table pointer (fixed: use an array, not a pointer with a struct literal).
 static inline const t_type_info *type_info_table(void)
 {
 	static const t_type_info gtable[] =
@@ -132,6 +132,9 @@ static inline const t_type_info *type_info_table(void)
 	};
 	return (gtable);
 }
+
+// State table accessor (function pointer table)
+const t_fn_state	*conv_state_table(void);
 
 int64_t				ft_strto(const char *nptr, char **endptr, int base,
 						t_int_type type);
@@ -159,14 +162,18 @@ int64_t				ft_strto_unsigned(const char *nptr, char **endptr, int base,
 						size_t size);
 int64_t				ft_strto_signed(const char *nptr, char **endptr, int base,
 						size_t size);
+
+// Existing state handlers
 void				state_whitespace(t_conv_ctx *ctx);
 void				state_sign(t_conv_ctx *ctx);
 void				state_base_prefix(t_conv_ctx *ctx);
 void				state_digits(t_conv_ctx *ctx);
 void				state_overflow(t_conv_ctx *ctx);
+
+// Helpers
 void				init_conv_ctx(t_conv_ctx *ctx, const char *nptr, char **endptr,
 						int base, t_int_type type);
 int					char_to_digit(char c, int base);
-const t_type_info	*get_type_info(t_int_type type);							
+const t_type_info	*get_type_info(t_int_type type);
 
 #endif

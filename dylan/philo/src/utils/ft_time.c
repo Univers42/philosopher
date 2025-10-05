@@ -6,12 +6,13 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 18:38:53 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 18:39:38 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/06 00:18:39 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include "philo.h"
+#include <sys/time.h>
 
 t_time	cur_time(void)
 {
@@ -46,6 +47,18 @@ t_time	ft_usleep(t_time wait)
 		usleep(100);
 	}
 	return (wait);
+}
+
+t_time	time_dif(t_time since)
+{
+	t_time now = cur_time();
+	return (now - since);
+}
+
+// Simple precise sleep fallback (same as ft_usleep for now)
+t_time	ft_precise_usleep(t_time wait)
+{
+	return ft_usleep(wait);
 }
 
 //int	main(int argc, char **argv)

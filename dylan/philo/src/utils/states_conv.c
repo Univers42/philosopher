@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:03:28 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 19:05:42 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/06 00:20:52 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,4 +94,19 @@ void	state_overflow(t_conv_ctx *ctx)
 		ctx->ptr++;
 	ctx->any_digit = true;
 	ctx->state = STATE_DONE;
+}
+
+const t_fn_state	*conv_state_table(void)
+{
+	static const t_fn_state table[CONV_STATE_COUNT] = {
+		[STATE_INIT] = NULL,
+		[STATE_WHITESPACE] = state_whitespace,
+		[STATE_SIGN] = state_sign,
+		[STATE_BASE_PREFIX] = state_base_prefix,
+		[STATE_DIGITS] = state_digits,
+		[STATE_OVERFLOW] = state_overflow,
+		[STATE_DONE] = NULL,
+		[STATE_ERROR] = NULL
+	};
+	return table;
 }
