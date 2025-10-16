@@ -71,6 +71,7 @@ typedef struct s_data {
 	int			debug;
 	t_mutex		waiter;
 	int			waiter_slots;
+	int			waiter_capacity;
 	t_philo		*philos;
 	t_time		timeout_ms;    // runtime timeout
 }	t_data;

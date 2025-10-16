@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 18:38:53 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 12:46:34 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 11:26:01 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,11 +55,37 @@ t_time	time_dif(t_time since)
 	return (now - since);
 }
 
-// Simple precise sleep fallback (same as ft_usleep for now)
-t_time	ft_precise_usleep(t_time wait)
+t_time	now_ns(void)
 {
-	return ft_usleep(wait);
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	return ((uint64_t)tv.tv_sec * 1000000000ULL + (uint64_t)tv.tv_usec * 1000ULL);
 }
+
+t_time ft_precise_sleep(t_time duration_ns)
+{
+    uint64_t t0 = now_ns();
+    uint64_t target = t0 + duration_ns;
+
+    // Coarse sleep for most of the duration
+    if (duration_ns > (PERIOD_NS + TOLERANCE_NS)) {
+        uint64_t coarse = duration_ns - (PERIOD_NS + TOLERANCE_NS);
+        uint64_t ms = coarse / 1000000ULL;  // convert ns → ms
+        if (ms > 0)
+            usleep(ms * 1000);              // convert ms → µs for usleep()
+    }
+
+    // Spin until the target time
+    while (now_ns() < target) {
+        // Optional: usleep(0) gives the CPU a tiny break
+        usleep(0);
+    }
+
+    uint64_t t1 = now_ns();
+    return t1 - t0; // return actual elapsed nanoseconds
+}
+
 
 //int	main(int argc, char **argv)
 //{

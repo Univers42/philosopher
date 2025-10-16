@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 20:09:51 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 17:02:29 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 11:10:30 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,8 @@ int	init_mutex(t_data *c)
 	pthread_mutex_init(&c->death, NULL);
 	pthread_mutex_init(&c->m_finish, NULL);
 	pthread_mutex_init(&c->waiter, NULL);
-	c->waiter_slots = c->args[PHILO_C] - 1;
+	c->waiter_capacity = c->args[PHILO_C] - 1;
+	c->waiter_slots = c->waiter_capacity;
 	c->forks = ft_calloc(c->args[PHILO_C], sizeof(t_mutex));
 	if (!c->forks)
 		return (MALLOC_KO);

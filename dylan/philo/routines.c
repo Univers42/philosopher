@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:59:40 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 17:02:31 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 11:01:49 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,7 @@ void	*dinner(void *p)
 	while (done(philo) == FALSE)
 	{
 		if (!get_fork(philo))
-			continue ; // did not acquire both forks (likely finish set), retry/loop
+			continue ;
 		eat(philo);
 		leave_fork(philo);
 	}

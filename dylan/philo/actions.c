@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 23:09:04 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 17:02:29 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 11:10:38 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <limits.h>
 
 // internal cancellable sleep based on finish flag
 static void	sleep_until_ms(t_philo *p, t_time deadline_ms)
@@ -50,13 +51,48 @@ static void	sleep_until_ms(t_philo *p, t_time deadline_ms)
 	}
 }
 
-// limit contenders to N-1 to prevent starvation with global fork order
+static int	min_eat_count(t_philo *p)
+{
+	int	i;
+	int	min;
+	int	count;
+
+	min = INT_MAX;
+	i = 0;
+	while (i < p->c->args[PHILO_C])
+	{
+		get_value_safe(&p->c->philos[i].eating_mutex, &count,
+			&p->c->philos[i].eat_count, sizeof(int));
+		if (count < min)
+			min = count;
+		i++;
+	}
+	if (min == INT_MAX)
+		return (0);
+	return (min);
+}
+
+static int	can_eat_now(t_philo *p)
+{
+	int	min;
+	int	count;
+
+	min = min_eat_count(p);
+	get_value_safe(&p->eating_mutex, &count, &p->eat_count, sizeof(int));
+	return (count <= min);
+}
+
 int	lock(t_philo *p)
 {
 	while (TRUE)
 	{
 		if (done(p) == TRUE)
 			return (0);
+		if (!can_eat_now(p))
+		{
+			usleep(100);
+			continue;
+		}
 		pthread_mutex_lock(&p->c->waiter);
 		if (p->c->waiter_slots > 0)
 		{
@@ -73,8 +109,8 @@ void unlock(t_philo *p)
 {
 	pthread_mutex_lock(&p->c->waiter);
 	p->c->waiter_slots++;
-	if (p->c->waiter_slots > p->c->args[PHILO_C] - 1)
-		p->c->waiter_slots = p->c->args[PHILO_C] - 1; // clamp to N-1
+	if (p->c->waiter_slots > p->c->waiter_capacity)
+		p->c->waiter_slots = p->c->waiter_capacity;
 	pthread_mutex_unlock(&p->c->waiter);
 }
 
