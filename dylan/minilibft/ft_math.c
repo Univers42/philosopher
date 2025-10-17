@@ -1,31 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils2.c                                           :+:      :+:    :+:   */
+/*   ft_math.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: glacroix <glacroix@student.42madrid.com    +#+  +:+       +#+        */
+/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/07 19:28:48 by glacroix          #+#    #+#             */
-/*   Updated: 2023/09/07 19:32:41 by glacroix         ###   ########.fr       */
+/*   Created: 2025/10/17 14:51:57 by dlesieur          #+#    #+#             */
+/*   Updated: 2025/10/17 14:57:21 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/philo_bonus.h"
+#include <unistd.h>
+#include <stdbool.h>
 
-size_t	ft_strlen(const char *str)
+bool    within_range(unsigned short min, unsigned short max, unsigned short v)
 {
-	size_t	x;
-
-	x = 0;
-	while (str[x] != '\0')
-		x++;
-	return (x);
-}
-
-void	ft_putstr_fd(char *s, int fd)
-{
-	if (!s)
-		return ;
-	if (s && fd >= 0)
-		write(fd, s, ft_strlen(s));
-}
+    return ((v - min) <= (max - min));   
+} 

@@ -6,12 +6,13 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/24 18:27:07 by miaviles          #+#    #+#             */
-/*   Updated: 2025/10/16 17:25:30 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/17 14:47:26 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/philo.h"
 
+//DONE
 void sleep_and_think(t_philo *philo)
 {
 	print_state(philo, "is sleeping");
@@ -23,12 +24,14 @@ void sleep_and_think(t_philo *philo)
 		ft_usleep(1);
 }
 
+//DONE
 void release_forks(t_philo *philo)
 {
 	pthread_mutex_unlock(philo->right_fork);
 	pthread_mutex_unlock(philo->left_fork);
 }
 
+//DONE
 int take_forks(t_philo *philo)
 {
 	if (philo->id % 2 == 1)
@@ -58,6 +61,7 @@ int take_forks(t_philo *philo)
 	return (1);
 }
 
+//DONE
 void eat(t_philo *philo)
 {
 	pthread_mutex_lock(&philo->meal_lock);

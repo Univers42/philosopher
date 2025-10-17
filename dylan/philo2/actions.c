@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/16 23:35:10 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/16 23:37:12 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/17 17:35:56 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,12 +15,12 @@
 void sleep_and_think(t_philo *philo)
 {
 	print_state(philo, "is sleeping");
-	ft_usleep(philo->ctx->args[TT_SLEEP]);
+	ft_precise_usleep(philo->ctx->args[TT_SLEEP]);
 	print_state(philo, "is thinking");
 	if (philo->ctx->n_philo % 2 == 1)
-		ft_usleep(philo->ctx->args[TT_EAT] / 2);
+		ft_precise_usleep(philo->ctx->args[TT_EAT] / 2);
 	else if (philo->ctx->n_philo > 1)
-		ft_usleep(1);
+		ft_precise_usleep(1);
 }
 
 void release_forks(t_philo *philo)
@@ -58,7 +58,7 @@ void eat(t_philo *philo)
 	philo->last_meal = get_time();
 	pthread_mutex_unlock(&philo->meal_lock);
 	print_state(philo, "is eating");
-	ft_usleep(philo->ctx->args[TT_EAT]);
+	ft_precise_usleep(philo->ctx->args[TT_EAT]);
 	pthread_mutex_lock(&philo->meal_lock);
 	philo->meals_eaten++;
 	pthread_mutex_unlock(&philo->meal_lock);

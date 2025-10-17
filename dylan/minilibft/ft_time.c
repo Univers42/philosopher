@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 18:38:53 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/16 23:01:53 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/17 20:31:28 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "minilibft.h"
 #include <sys/time.h>
 #include <unistd.h>
+#include <time.h>
 
 #define PRECISE_COARSE_NS 2000000ULL
 #define PRECISE_MARGIN_NS 200000ULL
@@ -26,9 +27,9 @@ typedef struct s_precise_stats {
 	uint64_t count;
 }	t_precise_stats;
 
-static t_precise_stats	g_precise = {5e-3, 5e-3, 0.0, 1};
+t_precise_stats	g_precise = {5e-3, 5e-3, 0.0, 1};
 
-static double	timeval_diff(struct timeval start, struct timeval end)
+double	timeval_diff(struct timeval start, struct timeval end)
 {
 	double	sec;
 	double	usec;
@@ -38,7 +39,7 @@ static double	timeval_diff(struct timeval start, struct timeval end)
 	return (sec + usec / 1000000.0);
 }
 
-static uint64_t	timeval_diff_ns(struct timeval start, struct timeval end)
+ uint64_t	timeval_diff_ns(struct timeval start, struct timeval end)
 {
 	long	sec;
 	long	usec;
@@ -55,7 +56,7 @@ static uint64_t	timeval_diff_ns(struct timeval start, struct timeval end)
 	return ((uint64_t)sec * 1000000000ULL) + ((uint64_t)usec * 1000ULL);
 }
 
-static double	ft_sqrt(double x)
+double	ft_sqrt(double x)
 {
 	double	guess;
 	double	prev;
@@ -73,24 +74,6 @@ static double	ft_sqrt(double x)
 		i++;
 	}
 	return (guess);
-}
-
-void	ft_usleep(unsigned long long time_in_ms)
-{
-	t_time 	start;
-	t_time	current;
-
-	start = get_time();
-	while(1)
-	{
-		current = get_time();
-		if (current - start >= time_in_ms)
-			break ;
-		if (time_in_ms - (current - start) > 10)
-			usleep(5000);
-		else
-			usleep(100);
-	}
 }
 
 t_time	get_time(void)
@@ -124,21 +107,15 @@ t_time	ft_neg_offset(t_time offset)
 	return (cur_time() - offset);
 }
 
+// forward declaration to use precise sleep in ft_usleep
+t_time ft_precise_usleep(t_time wait);
+
 //! may overlap, to use more precise sleep after that
 // the usleep function is not guaranteed to be precise, and sometimes
 // the actual sleep will be longer than expected
-t_time	ft_usleep(t_time wait)
+void	ft_usleep(unsigned long time_in_ms)
 {
-	t_time	limit;
-
-	limit = cur_time() + wait;
-	while (TRUE)
-	{
-		if (cur_time() >= limit)
-			break ;
-		ft_precise_sleep(1000000ULL);
-	}
-	return (wait);
+	ft_precise_usleep(time_in_ms);
 }
 
 t_time	time_dif(t_time since)
@@ -166,69 +143,77 @@ double	ns_to_s(t_time ns)
 	return ((double)ns / 1e9);
 }
 
+static inline uint64_t ts_to_ns(struct timespec ts)
+{
+	return ((uint64_t)ts.tv_sec * 1000000000ULL) + (uint64_t)ts.tv_nsec;
+}
+
+static inline struct timespec ns_to_ts(uint64_t ns)
+{
+	struct timespec ts;
+	ts.tv_sec = (time_t)(ns / 1000000000ULL);
+	ts.tv_nsec = (long)(ns % 1000000000ULL);
+	return (ts);
+}
+
+static inline uint64_t mono_now_ns(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (ts_to_ns(ts));
+}
+
 uint64_t	ft_precise_sleep(uint64_t duration_ns)
 {
-	struct timeval	begin;
-	struct timeval	coarse_start;
-	struct timeval	coarse_end;
-	struct timeval	spin_start;
-	struct timeval	now;
-	double			remaining;
-	double			observed;
-	double			delta;
-	double			variance;
-	double			stddev;
-	uint64_t		spin_ns;
-	uint64_t		elapsed;
+	uint64_t	start_ns;
+	uint64_t	deadline_ns;
+	uint64_t	now_ns;
+	uint64_t	remaining;
 
 	if (duration_ns == 0)
 		return (0);
-	gettimeofday(&begin, NULL);
-	remaining = (double)duration_ns / 1000000000.0;
-	while (remaining > g_precise.estimate)
+	start_ns = mono_now_ns();
+	deadline_ns = start_ns + duration_ns;
+	while (1)
 	{
-		gettimeofday(&coarse_start, NULL);
-		usleep(1000);
-		gettimeofday(&coarse_end, NULL);
-		observed = timeval_diff(coarse_start, coarse_end);
-		remaining -= observed;
-		if (remaining < 0.0)
-			remaining = 0.0;
-		g_precise.count++;
-		delta = observed - g_precise.mean;
-		g_precise.mean += delta / (double)g_precise.count;
-		g_precise.m2 += delta * (observed - g_precise.mean);
-		if (g_precise.count > 1)
+		now_ns = mono_now_ns();
+		if (now_ns >= deadline_ns)
+			break ;
+		remaining = deadline_ns - now_ns;
+		if (remaining > 2ULL * 1000000ULL)
 		{
-			variance = g_precise.m2 / (double)(g_precise.count - 1);
-			if (variance < 0.0)
-				variance = 0.0;
-			stddev = ft_sqrt(variance);
+			struct timespec req = ns_to_ts(remaining - 1000000ULL);
+			nanosleep(&req, NULL);
+		}
+		else if (remaining > 50ULL * 1000ULL)
+		{
+			/* Let the OS breathe a bit more here */
+			struct timespec req = ns_to_ts(remaining / 2);
+			nanosleep(&req, NULL);
 		}
 		else
-			stddev = 0.0;
-		g_precise.estimate = g_precise.mean + stddev;
-		if (g_precise.estimate < 0.0005)
-			g_precise.estimate = 0.0005;
-		if (remaining <= 0.0)
-			break ;
-	}
-	spin_ns = (uint64_t)(remaining * 1000000000.0);
-	if (spin_ns > 0)
-	{
-		gettimeofday(&spin_start, NULL);
-		while (TRUE)
 		{
-			gettimeofday(&now, NULL);
-			elapsed = timeval_diff_ns(spin_start, now);
-			if (elapsed >= spin_ns)
-				break ;
-			if (spin_ns - elapsed > 2000ULL)
-				usleep(0);
+			/* Instead of tight spinning, yield occasionally */
+			while (mono_now_ns() < deadline_ns)
+				usleep(50); // yield 50µs per loop
+			break ;
 		}
 	}
-	gettimeofday(&now, NULL);
-	return (timeval_diff_ns(begin, now));
+	return (mono_now_ns() - start_ns);
+}
+
+// Sleep until an absolute deadline in ms (monotonic), minimizing drift across cycles
+t_time	ft_sleep_until_ms(t_time deadline_ms)
+{
+	while (1)
+	{
+		t_time now_ms = cur_time();
+		if (now_ms >= deadline_ms)
+			break ;
+		uint64_t remain_ns = (uint64_t)(deadline_ms - now_ms) * 1000000ULL;
+		ft_precise_sleep(remain_ns);
+	}
+	return (deadline_ms);
 }
 
 t_time	ft_precise_usleep(t_time wait)

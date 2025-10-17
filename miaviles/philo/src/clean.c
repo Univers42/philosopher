@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   clean.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: miaviles <miaviles@student.42madrid>       +#+  +:+       +#+        */
+/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/01 17:27:17 by miaviles          #+#    #+#             */
-/*   Updated: 2025/07/12 10:51:04 by miaviles         ###   ########.fr       */
+/*   Updated: 2025/10/17 14:47:03 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/philo.h"
 
+//DONE
 void	cleanup(t_rules *rules)
 {
 	int	i;
