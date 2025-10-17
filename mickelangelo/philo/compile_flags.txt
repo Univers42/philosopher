@@ -1,0 +1,6 @@
+-Wextra
+-Wall
+-Werror
+-Wunreachable-code
+-Ofast 
+-I./include

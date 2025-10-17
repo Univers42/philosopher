@@ -39,6 +39,7 @@
 # define DEFAULT_TIMEOUT_MS 60000L       // 60 seconds runtime cap
 // Small grace period to absorb scheduling/printing jitter in death detection (ms)
 # define DEATH_EPS_MS       20
+# define URGENCY_MARGIN_MS  10
 
 typedef struct s_data	 t_data;
 typedef pthread_mutex_t t_mutex;

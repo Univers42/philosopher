@@ -1,0 +1,20 @@
+con positivos solo
+ARG=$(shuf -i 1-5 | tr '\n' ' '); ./push_swap $ARG | tee lines | ./checker_linux $ARG; wc -l lines; rm lines
+
+Con numeros negativos
+ARG=$(awk 'BEGIN{
+  srand();
+  for(i=1;i<=500;i++)
+    printf "%d ", int(rand()*4294967296)-2147483648
+}'); ./push_swap $ARG | tee lines | ./checker_linux $ARG; wc -l lines; rm lines
+
+
+ARG=$(awk 'BEGIN{
+  srand();
+  for(i=1;i<=5;i++)
+    printf "%d ", int(rand()*4294967296)-2147483648
+}'); ./push_swap $ARG | tee lines | ./checker_linux $ARG; wc -l lines; rm lines
+
+
+muestra los numeros para saber si esta bien o no depues.
+ARG=$(shuf -i 1-5 | tr '\n' ' ' | sed 's/ $//'); ./push_swap $ARG | tee lines | ./checker_linux $ARG; wc -l lines; echo "Números: $ARG"; rm lines

@@ -6,14 +6,106 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 18:38:53 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/16 11:26:01 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 23:01:53 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include "minilibft.h"
 #include <sys/time.h>
+#include <unistd.h>
 
+#define PRECISE_COARSE_NS 2000000ULL
+#define PRECISE_MARGIN_NS 200000ULL
+#define PRECISE_SPIN_NS   50000ULL
+
+typedef struct s_precise_stats {
+	double	estimate;
+	double	mean;
+	double	m2;
+	uint64_t count;
+}	t_precise_stats;
+
+static t_precise_stats	g_precise = {5e-3, 5e-3, 0.0, 1};
+
+static double	timeval_diff(struct timeval start, struct timeval end)
+{
+	double	sec;
+	double	usec;
+
+	sec = (double)(end.tv_sec - start.tv_sec);
+	usec = (double)(end.tv_usec - start.tv_usec);
+	return (sec + usec / 1000000.0);
+}
+
+static uint64_t	timeval_diff_ns(struct timeval start, struct timeval end)
+{
+	long	sec;
+	long	usec;
+
+	sec = end.tv_sec - start.tv_sec;
+	usec = end.tv_usec - start.tv_usec;
+	if (usec < 0)
+	{
+		usec += 1000000;
+		sec -= 1;
+	}
+	if (sec < 0)
+		return (0);
+	return ((uint64_t)sec * 1000000000ULL) + ((uint64_t)usec * 1000ULL);
+}
+
+static double	ft_sqrt(double x)
+{
+	double	guess;
+	double	prev;
+	int		i;
+
+	if (x <= 0.0)
+		return (0.0);
+	guess = x;
+	prev = 0.0;
+	i = 0;
+	while (i < 12 && guess != prev)
+	{
+		prev = guess;
+		guess = 0.5 * (guess + x / guess);
+		i++;
+	}
+	return (guess);
+}
+
+void	ft_usleep(unsigned long long time_in_ms)
+{
+	t_time 	start;
+	t_time	current;
+
+	start = get_time();
+	while(1)
+	{
+		current = get_time();
+		if (current - start >= time_in_ms)
+			break ;
+		if (time_in_ms - (current - start) > 10)
+			usleep(5000);
+		else
+			usleep(100);
+	}
+}
+
+t_time	get_time(void)
+{
+	struct timeval	tv;
+	unsigned long	ms;
+	gettimeofday(&tv, NULL);
+	ms = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+	return (ms);
+}
+
+uint64_t elapsed_time(uint64_t time)
+{
+    return (cur_time() - time);
+}
 t_time	cur_time(void)
 {
 	struct timeval	time;
@@ -44,7 +136,7 @@ t_time	ft_usleep(t_time wait)
 	{
 		if (cur_time() >= limit)
 			break ;
-		usleep(100);
+		ft_precise_sleep(1000000ULL);
 	}
 	return (wait);
 }
@@ -55,37 +147,95 @@ t_time	time_dif(t_time since)
 	return (now - since);
 }
 
-t_time	now_ns(void)
+uint64_t	now_ns(void)
 {
-	struct timeval tv;
+	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
-	return ((uint64_t)tv.tv_sec * 1000000000ULL + (uint64_t)tv.tv_usec * 1000ULL);
+	return ((uint64_t)tv.tv_sec * 1000000000ULL
+		+ (uint64_t)tv.tv_usec * 1000ULL);
 }
 
-t_time ft_precise_sleep(t_time duration_ns)
+uint64_t	elapsed_ns(t_time start, t_time end)
 {
-    uint64_t t0 = now_ns();
-    uint64_t target = t0 + duration_ns;
-
-    // Coarse sleep for most of the duration
-    if (duration_ns > (PERIOD_NS + TOLERANCE_NS)) {
-        uint64_t coarse = duration_ns - (PERIOD_NS + TOLERANCE_NS);
-        uint64_t ms = coarse / 1000000ULL;  // convert ns → ms
-        if (ms > 0)
-            usleep(ms * 1000);              // convert ms → µs for usleep()
-    }
-
-    // Spin until the target time
-    while (now_ns() < target) {
-        // Optional: usleep(0) gives the CPU a tiny break
-        usleep(0);
-    }
-
-    uint64_t t1 = now_ns();
-    return t1 - t0; // return actual elapsed nanoseconds
+	return (end - start);
 }
 
+double	ns_to_s(t_time ns)
+{
+	return ((double)ns / 1e9);
+}
+
+uint64_t	ft_precise_sleep(uint64_t duration_ns)
+{
+	struct timeval	begin;
+	struct timeval	coarse_start;
+	struct timeval	coarse_end;
+	struct timeval	spin_start;
+	struct timeval	now;
+	double			remaining;
+	double			observed;
+	double			delta;
+	double			variance;
+	double			stddev;
+	uint64_t		spin_ns;
+	uint64_t		elapsed;
+
+	if (duration_ns == 0)
+		return (0);
+	gettimeofday(&begin, NULL);
+	remaining = (double)duration_ns / 1000000000.0;
+	while (remaining > g_precise.estimate)
+	{
+		gettimeofday(&coarse_start, NULL);
+		usleep(1000);
+		gettimeofday(&coarse_end, NULL);
+		observed = timeval_diff(coarse_start, coarse_end);
+		remaining -= observed;
+		if (remaining < 0.0)
+			remaining = 0.0;
+		g_precise.count++;
+		delta = observed - g_precise.mean;
+		g_precise.mean += delta / (double)g_precise.count;
+		g_precise.m2 += delta * (observed - g_precise.mean);
+		if (g_precise.count > 1)
+		{
+			variance = g_precise.m2 / (double)(g_precise.count - 1);
+			if (variance < 0.0)
+				variance = 0.0;
+			stddev = ft_sqrt(variance);
+		}
+		else
+			stddev = 0.0;
+		g_precise.estimate = g_precise.mean + stddev;
+		if (g_precise.estimate < 0.0005)
+			g_precise.estimate = 0.0005;
+		if (remaining <= 0.0)
+			break ;
+	}
+	spin_ns = (uint64_t)(remaining * 1000000000.0);
+	if (spin_ns > 0)
+	{
+		gettimeofday(&spin_start, NULL);
+		while (TRUE)
+		{
+			gettimeofday(&now, NULL);
+			elapsed = timeval_diff_ns(spin_start, now);
+			if (elapsed >= spin_ns)
+				break ;
+			if (spin_ns - elapsed > 2000ULL)
+				usleep(0);
+		}
+	}
+	gettimeofday(&now, NULL);
+	return (timeval_diff_ns(begin, now));
+}
+
+t_time	ft_precise_usleep(t_time wait)
+{
+	ft_precise_sleep(wait * 1000000ULL);
+	return (wait);
+}
 
 //int	main(int argc, char **argv)
 //{

@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 14:09:47 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 18:52:22 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 23:26:16 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ void	ft_putstr_fd(const char *s, int fd)
 	if (!(s && fd))
 		return ;
 	write(fd, s, ft_strlen(s));
+	write(fd, "\n", 1);
 }
 
 void	ft_putnbr_fd(size_t nb, int fd)

@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/14 18:49:15 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 12:47:10 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 23:02:35 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,11 +43,14 @@ size_t	ft_strlen(const char *s);
 void	ft_tolower(char *c);
 
 //SYS/TIME
-t_time	cur_time(void);
-t_time	time_dif(t_time since);
-t_time	ft_positive_offset(t_time start, t_time offset);
-t_time	ft_neg_offset(t_time offset);
-t_time	ft_usleep(t_time wait);
-t_time	ft_precise_usleep(t_time wait);
+t_time		cur_time(void);
+t_time		time_dif(t_time since);
+t_time		ft_positive_offset(t_time start, t_time offset);
+t_time		ft_neg_offset(t_time offset);
+t_time		ft_usleep(t_time wait);
+t_time		ft_precise_usleep(t_time wait);
+uint64_t	now_ns(void);
+uint64_t	ft_precise_sleep(uint64_t duration_ns);
+uint64_t	elapsed_time(uint64_t time);
 
 #endif

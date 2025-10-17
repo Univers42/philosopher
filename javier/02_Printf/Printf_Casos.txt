@@ -1,0 +1,184 @@
+% -> nada
+%  -> (con espacio detras) no imprime nada
+%a -> float o double basura, en formato HEX en minusculas
+%A -> float o double basura, en formatdo HEX MAYUSCULAS
+%b -> binario
+%B -> binario (lo mismo que el b en resultado)
+%c -> char basura
+%C -> no sale nada. No es valido
+%d -> int basura
+%D -> %D
+%e -> double o float en e cientifica
+%E -> lo mismo que %e
+%f -> double o float normal
+%F -> lo mismo que %f
+%g -> imprime un 0 si nada y solo dejara los ceros necesarios
+%G -> Lo mismo que %g
+%h -> solo no hace nada. con %hd(sort int), %hhd(signed char), %hu(unsigned short), %hhu(unsigned char)
+%H -> %H
+%i -> entero basura
+%I -> no imprime nada
+%j -> Solo no hace nada. con %jd, %ju, %jx etc...
+%J -> %J
+%k -> %k
+%K -> %K
+%l -> Solo no hace nada. %ld %lf son long int y double respectivamente
+%L -> Solo no hace nada. con %Lf es Long Double.
+%m -> Imprime "Success" y el errno no esta configurado.
+%M -> %M
+%n -> De por si no imprime nada. Pero almacena el numero de chars impresos almacenandoselo en un &num
+%N -> %N
+%o -> imprime numero en octal
+%O -> %O
+%p -> puntero
+%P -> %P
+%q -> no imprime nada. no es valido.
+%Q -> %Q
+%r -> %r
+%R -> %R
+%s -> imprime basura
+%S -> no imprime nada.
+%t -> no imprime nada. No es valido.
+%T -> %t
+%u -> unsigned basura
+%U -> %U
+%v -> %v
+%V -> %V
+%w -> %w
+%W -> %W
+%x -> hex basura
+%X -> HEX basura en mayusculas
+%y -> %y
+%Y -> %Y
+%z -> no imprime nada pero con zu son size_t
+%Z -> no imprime nada
+%0-9 -> no imprime nada.
+
+%# -> no imprime nada
+%* -> no imprime nada
+%- -> no imprime nada
+%+ -> no imprime nada
+%' -> no imprime nada
+%. -> no imprime nada
+el resto imprime el % con su caracter.
+
+**********************************************************
+**********************************************************
+
+FLAGS QUE IMPRIME LO MISMO CON NUMERO DE CHARS 2
+%D -> %D
+%H -> %H
+%J -> %J
+%k -> %k
+%K -> %K
+%M -> %M
+%N -> %N
+%O -> %O
+%P -> %P
+%Q -> %Q
+%r -> %r
+%R -> %R
+%T -> %t
+%U -> %U
+%v -> %v
+%V -> %V
+%w -> %w
+%W -> %W
+%y -> %y
+%Y -> %Y
+
+FLAGS QUE IMPRIME SOLO EL % CON NUM DE CHARS 1 si no estan al final del string
+%l
+%L
+%q
+%t
+%z
+%Z
+
+FLAGS QUE SE SALTAN TANTO EL % COMO EL CARACTER Y DAN CERO chars
+%S -> imprime detras SIN el % y tampoco la S.
+%n -> imprime detras SIN el % y tampoco la n.
+
+
+LOS QUE DARAN -1 EN SALIDA DE CHARS LEIDOS
+% -> nada
+%C -> no imprime nada de lo que hay detras de %C
+
+
+RAROS QUE DAN VALOR CHAR EN MITAD DE STRING
+%h -> imprime detras con el % pero no la h
+%I -> imprime caracteres 0x0p+0a y corta el resto
+%j -> imprime detras con el % pero no la j
+%l -> imprime detras con el % pero no la l
+%L -> imprime detras con el % pero no la L
+%q -> imprime detras con el % pero no la q
+%S -> imprime detras SIN el % y tampoco la S.
+%t -> imprime detras con el % pero no la t
+%z -> imprime detras con el % pero no la z
+%Z -> imprime detras con el % pero no la Z
+%0 -> imprime detras pero con valor 0.000000e+00 y corta parte del resto
+%# -> lo mismo que el %0
+%- -> lo mismo que el %0
+%+ -> lo mismo que el %0
+%' -> lo mismo que el %0
+%1-9 -> imprime tal cual con esta es decir incluido el %1-9
+%n -> imprime detras SIN el % NI la n
+%* -> imprime detras y en la posicion del flag pone el %y un numero seguido.. luego el resto bien
+%. -> imprime detras y pone el %.0 y lo que haya detras.
+
+DAN VALOR CON ALGO DETRAS
+%h -> %hhola -> (numDependeSiguienteChar)la %h hola -> % hola
+%I -> %Ihola -> (numAleatorio)la %I hola -> mismo
+%j -> %jhola -> (numAleatorio)la %j hola -> % hola
+%l -> %lhola -> %hola -> %l hola -> % hola
+%L -> %Lhola -> %hola -> %l hola -> % hola
+%q -> %qhola -> %hola -> %q hola -> % hola
+	%S -> %Shola -> hola -> %S hola -> (espacio)hola
+%t -> %thola -> %hola -> %t hola -> % hola
+%z -> %zhola -> %hola -> %z hola -> % hola
+%Z -> %Zhola -> %hola -> %Z hola -> % hola
+%0 -> %0hola -> (numAleatorio)la -> %0 hola -> mismo
+%1-6 -> %1-6hola -> (numAleatorio)la -> %1-6 hola -> %1-6 hola
+%7-9 -> %7-9hola -> (2spacios el 7, 3 el 8, 4 el 9)(numAleatorio)la -> %7-9 hola -> %7-9 hola
+%# -> %#hola -> (numAleatorio)la -> %# hola -> mismo
+%- -> %-hola -> (numAleatorio)la -> %- hola -> mismo
+%+ -> %+hola -> (numAleatorio)la -> %- hola -> mismo
+%' -> %'hola -> (numAleatorio)la -> %' hola -> mismo
+	%n -> %nhola -> hola -> %n hola -> (espacio)hola
+%* -> %*hola -> pantalla negro se ralla -> %* hola -> %numaleatorio hola
+%. -> %.hola -> (numAleatorio)la -> %. hola -> %.0 hola
+
+RAROS QUE DAN -1 AL FINAL DEL STRING o solos sin nada despues
+%h -> imprime lo de antes pero ni % ni la h
+%I -> imprime lo de antes pero ni % ni la I
+%j -> imprime lo de antes pero ni % ni la j
+%l -> imprime lo de antes pero ni % ni la l
+%L -> imprime lo de antes pero ni % ni la L
+%q -> imprime lo de antes pero ni % ni la q
+%t -> imprime lo de antes pero ni % ni la t
+%z -> imprime lo de antes pero ni % ni la z
+%Z -> imprime lo de antes pero ni % ni la Z
+%0-9 -> imprime lo de antes pero ni % ni la 0
+%# -> imprime lo de antes pero ni % ni la #
+%- -> imprime lo de antes pero ni % ni la -
+%+ -> imprime lo de antes pero ni % ni la +
+%' -> imprime lo de antes pero ni % ni la '
+%* -> imprime lo de antes pero ni % ni la *
+%. -> imprime lo de antes pero ni % ni la .
+
+
+
+
+
+TEST(1, print(" %% "));
+26:     TEST(2, print(" %%%% "));
+27:     TEST(3, print(" %% %% %% "));
+28:     TEST(4, print(" %%  %%  %% "));
+29:     TEST(5, print(" %%   %%   %% "));
+30:     TEST(6, print("%%"));
+31:     TEST(7, print("%% %%"));
+
+For /home/jrollon-/francinette/tests/printf/printfTester/tests/mix_test.cpp:
+25:     TEST(1, print("%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%%
+%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %c%%", 'A', "42", 42, 42 ,42 , 42, 42, 'B', "-42", -42, -42 ,-42 ,-42, 42, 'C', "0",
+0, 0 ,0 ,0, 42, 0));

@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 23:09:04 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/16 11:10:38 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/16 12:04:25 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,37 +17,30 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <errno.h>
 
 // internal cancellable sleep based on finish flag
+#define WAIT_CHUNK_NS 200000ULL  // 0.2 ms for tighter responsiveness
+// Short bound while waiting for the second fork (ns)
+#define SECOND_FORK_WAIT_NS 800000ULL  // 0.8 ms budget per attempt
+#define SECOND_FORK_STEP_NS  50000ULL  // 0.05 ms polling step
+
 static void	sleep_until_ms(t_philo *p, t_time deadline_ms)
 {
-	unsigned long long	end_us;
-	unsigned long long	now;
-	unsigned long long	rem;
-	struct timeval		tv, tv2;
-	
-	end_us = (unsigned long long)deadline_ms * 1000ULL;
+	uint64_t	target_ns;
+	uint64_t	now;
+	uint64_t	remaining;
+	uint64_t	chunk;
+
+	target_ns = (uint64_t)deadline_ms * 1000000ULL;
 	while (done(p) == FALSE)
 	{
-		gettimeofday(&tv, NULL);
-		now = (unsigned long long)tv.tv_sec * 1000000ULL + (unsigned long long)tv.tv_usec;
-		if (now >= end_us)
-			break;
-		rem = end_us - now;
-		if (rem > 2000ULL)
-			usleep((useconds_t)(rem - 1000ULL));
-		else if (rem > 200ULL)
-			usleep(100);
-		else
-		{
-			while (done(p) == FALSE)
-			{
-				gettimeofday(&tv2, NULL);
-				if ((unsigned long long)tv2.tv_sec * 1000000ULL + (unsigned long long)tv2.tv_usec >= end_us)
-					return;
-			}
-			return ;
-		}
+		now = now_ns();
+		if (now >= target_ns)
+			break ;
+		remaining = target_ns - now;
+		chunk = (remaining > WAIT_CHUNK_NS) ? WAIT_CHUNK_NS : remaining;
+		ft_precise_sleep(chunk);
 	}
 }
 
@@ -72,14 +65,61 @@ static int	min_eat_count(t_philo *p)
 	return (min);
 }
 
+static t_time	min_time_to_die_left(t_philo *p, t_time now)
+{
+	t_time	min;
+	t_time	left;
+	int		is_eating;
+	int		i;
+
+	min = UINT64_MAX;
+	i = 0;
+	while (i < p->c->args[PHILO_C])
+	{
+		pthread_mutex_lock(&p->c->philos[i].eating_mutex);
+		is_eating = p->c->philos[i].is_eating;
+		// cast long -> t_time before comparing/subtracting
+		{
+			t_time max_at = (t_time)p->c->philos[i].max_time_to_eat;
+			left = (max_at > now) ? (max_at - now) : 0;
+		}
+		pthread_mutex_unlock(&p->c->philos[i].eating_mutex);
+		if (is_eating == TRUE)
+		{
+			i++;
+			continue;
+		}
+		if (left < min)
+			min = left;
+		i++;
+	}
+	return (min == UINT64_MAX) ? 0 : min;
+}
+
 static int	can_eat_now(t_philo *p)
 {
-	int	min;
-	int	count;
+	t_time	now;
+	t_time	own_left;
+	t_time	min_left;
+	int		own_count;
 
-	min = min_eat_count(p);
-	get_value_safe(&p->eating_mutex, &count, &p->eat_count, sizeof(int));
-	return (count <= min);
+	now = cur_time();
+	pthread_mutex_lock(&p->eating_mutex);
+	{
+		// cast long -> t_time before comparing/subtracting
+		t_time max_at = (t_time)p->max_time_to_eat;
+		own_left = (max_at > now) ? (max_at - now) : 0;
+		own_count = p->eat_count;
+	}
+	pthread_mutex_unlock(&p->eating_mutex);
+	if (own_left == 0 || own_left <= (t_time)URGENCY_MARGIN_MS)
+		return (TRUE);
+	min_left = min_time_to_die_left(p, now);
+	if (own_left <= min_left + (t_time)URGENCY_MARGIN_MS)
+		return (TRUE);
+	if (own_left <= (t_time)(p->c->args[T_EAT] / 2))
+		return (TRUE);
+	return (own_count <= min_eat_count(p));
 }
 
 int	lock(t_philo *p)
@@ -90,7 +130,7 @@ int	lock(t_philo *p)
 			return (0);
 		if (!can_eat_now(p))
 		{
-			usleep(100);
+			ft_precise_sleep(100000ULL); // 0.1 ms
 			continue;
 		}
 		pthread_mutex_lock(&p->c->waiter);
@@ -101,7 +141,7 @@ int	lock(t_philo *p)
 			return (1);
 		}
 		pthread_mutex_unlock(&p->c->waiter);
-		usleep(100);
+		ft_precise_sleep(100000ULL); // 0.1 ms
 	}
 }
 
@@ -116,8 +156,9 @@ void unlock(t_philo *p)
 
 int	get_fork(t_philo *p)
 {
-	int	first;
-	int	second;
+	int			first;
+	int			second;
+	uint64_t	start_ns;
 
 	if (!lock(p))
 		return (0);
@@ -138,16 +179,28 @@ int	get_fork(t_philo *p)
 		unlock(p);
 		return (0);
 	}
-	print_game(p, FORK_TAKEN);
-	// lock second fork
-	pthread_mutex_lock(&p->c->forks[second]);
-	if (done(p) == TRUE)
+	// Bounded try for the second fork: avoid holding one fork too long
+	start_ns = now_ns();
+	while (pthread_mutex_trylock(&p->c->forks[second]) != 0)
 	{
-		pthread_mutex_unlock(&p->c->forks[second]);
-		pthread_mutex_unlock(&p->c->forks[first]);
-		unlock(p);
-		return (0);
+		if (done(p) == TRUE)
+		{
+			pthread_mutex_unlock(&p->c->forks[first]);
+			unlock(p);
+			return (0);
+		}
+		if (now_ns() - start_ns >= SECOND_FORK_WAIT_NS)
+		{
+			// Give up to avoid blocking neighbors; retry later
+			pthread_mutex_unlock(&p->c->forks[first]);
+			unlock(p);
+			ft_precise_sleep(SECOND_FORK_STEP_NS);
+			return (0);
+		}
+		ft_precise_sleep(SECOND_FORK_STEP_NS);
 	}
+	// Only print after both forks are actually acquired
+	print_game(p, FORK_TAKEN);
 	print_game(p, FORK_TAKEN);
 	pthread_mutex_lock(&(p->eating_mutex));
 	p->is_eating = TRUE;
@@ -197,5 +250,4 @@ void	leave_fork(t_philo *p)
 	sleep_deadline = ft_positive_offset(base_meal, (t_time)(p->c->args[T_EAT] + p->c->args[T_SLEEP]));
 	sleep_until_ms(p, sleep_deadline);
 	print_game(p, THINKING);
-	
 }
