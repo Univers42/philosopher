@@ -6,41 +6,45 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/16 17:21:52 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/17 15:59:12 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 06:45:53 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 #include <unistd.h>
 
-int main(int argc, char **argv)
+static void	terminator(pthread_t th_monitor, pthread_t th_monitor_meals,
+					t_data *data)
 {
-    t_data  data;
-    int     flags = 0;
-    t_status st;
-    pthread_t th_monitor;
-    pthread_t th_monitor_meals;
+	pthread_join(th_monitor, NULL);
+	pthread_join(th_monitor_meals, NULL);
+	wait_threads(data);
+	print_debug_summary(data);
+	cleanup(data);
+}
 
-    st = parse_args(argc, argv, &data, &flags);
-    if (flags & ERR_FATAL_MASK)
-    {
-        ft_putstr_fd(MSG_ERR_PARSE, STDERR_FILENO);
-        return (1);
-    }
-    if (flags & WARN_MASK)
-        ft_putstr_fd("Warning: unlimited meals (-1)", STDERR_FILENO);
-    if (init_simulation(&data))
-        return (1);
-    if (start_threads(&data))
-        return (cleanup(&data), 1);
-    if (pthread_create(&th_monitor, NULL, monitor, &data) != 0)
-        return (cleanup(&data), 1);
-    if (pthread_create(&th_monitor_meals, NULL, monitor_meals, &data) != 0)
-        return (cleanup(&data), 1);
-    pthread_join(th_monitor, NULL);
-    pthread_join(th_monitor_meals, NULL);
-    wait_threads(&data);
-    cleanup(&data);
-    (void)st;
-    return (0);
+int	main(int argc, char **argv)
+{
+	t_data		data;
+	int			flags;
+	pthread_t	th_monitor;
+	pthread_t	th_monitor_meals;
+
+	flags = 0;
+	parse_args(argc, argv, &data, &flags);
+	if (flags & ERR_FATAL_MASK)
+		return (ft_putstr_fd("Error: invalid arguments\n", STDERR_FILENO), 1);
+	if (flags & WARN_MASK)
+		ft_putstr_fd("Warning: unlimited meals (-1)", STDERR_FILENO);
+	if (init_simulation(&data))
+		return (1);
+	print_debug_header(&data);
+	if (start_threads(&data))
+		return (cleanup(&data), 1);
+	if (pthread_create(&th_monitor, NULL, monitor, &data) != 0)
+		return (cleanup(&data), 1);
+	if (pthread_create(&th_monitor_meals, NULL, monitor_meals, &data) != 0)
+		return (cleanup(&data), 1);
+	terminator(th_monitor, th_monitor_meals, &data);
+	return (0);
 }
