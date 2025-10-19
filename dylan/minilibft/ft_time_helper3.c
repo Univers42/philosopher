@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 15:00:15 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/19 15:00:22 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 15:17:45 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,9 @@ struct timespec	ns_to_ts(uint64_t ns)
 
 uint64_t	mono_now_ns(void)
 {
-	struct timespec	ts;
+	struct timeval	tv;
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (ts_to_ns(ts));
+	gettimeofday(&tv, NULL);
+	return ((uint64_t)tv.tv_sec * 1000000000ULL
+		+ (uint64_t)tv.tv_usec * 1000ULL);
 }
