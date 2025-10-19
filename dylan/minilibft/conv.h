@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:07:50 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/19 06:38:10 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 15:11:47 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,8 +170,10 @@ void				state_digits(t_conv_ctx *ctx);
 void				state_overflow(t_conv_ctx *ctx);
 
 // Helpers
-void				init_conv_ctx(t_conv_ctx *ctx, const char *nptr, char **endptr,
-									int base, t_int_type type);
+void				init_conv_ctx(t_conv_ctx *ctx,
+									const char *nptr,
+									int base,
+									t_int_type type);
 int					char_to_digit(char c, int base);
 const t_type_info	*get_type_info(t_int_type type);
 

@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/16 23:35:10 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/19 06:50:40 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 13:28:52 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ void	release_forks(t_philo *philo)
 	pthread_mutex_unlock(philo->left_fork);
 }
 
-static int other_fork(t_philo *philo)
+static int	other_fork(t_philo *philo)
 {
 	pthread_mutex_lock(philo->right_fork);
 	print_state(philo, "has taken a fork");

@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/19 04:58:25 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/19 06:42:41 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 13:45:56 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 # include <pthread.h>
 # include <stdint.h>
 # include <stdbool.h>
+# include <string.h>
+# include <stdio.h>
 # include "minilibft.h"
 
 /* flag bits for parse warnings/errors */
@@ -157,5 +159,15 @@ void		print_state_died(t_philo *p);
 void		log_debug(t_philo *p, int level, const char *msg);
 void		print_debug_summary(t_data *ctx);
 void		print_debug_header(t_data *ctx);
-
+void		track_action(t_philo *p, const char *msg);
+const char	*get_color_code(const char *msg);
+const char	*get_state_icon(const char *msg);
+const char	*get_log_prefix(int level);
+void		print_enhanced(long timestamp, int id, const char *msg);
+void		print_standard(long timestamp, int id, const char *msg);
+void		print_action_stats(t_data *ctx);
+void		print_death_info(t_data *ctx);
+void		print_timing_info(t_data *ctx, long duration);
+void		print_debug_header(t_data *ctx);
+void		print_header_config(t_data *ctx);
 #endif

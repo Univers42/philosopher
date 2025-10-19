@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/17 15:14:33 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/19 04:47:03 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 13:49:54 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,16 +50,10 @@ void	*monitor(void *arg)
 	ctx = (t_data *)arg;
 	while (get_simulation_state(ctx))
 	{
-		i = 0;
-		while (i < ctx->n_philo && get_simulation_state(ctx))
-		{
+		i = -1;
+		while (++i < ctx->n_philo && get_simulation_state(ctx))
 			if (check_philo_death(ctx, i))
-			{
-				set_simulation_state(ctx, 0);
-				return (NULL);
-			}
-			i++;
-		}
+				return (set_simulation_state(ctx, 0), NULL);
 		usleep(1000);
 	}
 	return (NULL);
@@ -104,13 +98,12 @@ int	start_threads(t_data *ctx)
 	int	i;
 	int	res;
 
-	i = 0;
-	while (i < ctx->n_philo)
+	i = -1;
+	while (++i < ctx->n_philo)
 	{
 		res = pthread_create(&ctx->phi[i].thread, NULL, routine, &ctx->phi[i]);
 		if (res != 0)
 			return (ft_putstr_fd("Error creating threads", 2), 1);
-		i++;
 	}
 	return (0);
 }

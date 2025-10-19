@@ -6,7 +6,7 @@
 #    By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/19 12:00:00 by dlesieur          #+#    #+#              #
-#    Updated: 2025/10/19 05:22:06 by dlesieur         ###   ########.fr        #
+#    Updated: 2025/10/19 13:47:03 by dlesieur         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -55,14 +55,17 @@ MODE		:= $(if $(DEBUG),DEBUG,RELEASE)
 #                                   SOURCES                                    #
 # ============================================================================ #
 
-SRCS		:= actions.c \
-			   helpers.c \
-			   init.c \
-			   logs.c \
-			   main.c \
-			   parse.c \
-			   routine.c \
-			   sim_state.c
+SRCS		:= actions.c		\
+			   helpers.c		\
+			   init.c			\
+			   logs.c			\
+			   main.c			\
+			   parse.c			\
+			   routine.c		\
+			   sim_state.c		\
+			   log_helpers1.c	\
+			   log_helpers2.c	\
+			   log_helpers3.c
 
 OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 DEPS		:= $(OBJS:.o=.d)

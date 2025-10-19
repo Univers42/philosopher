@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 19:06:34 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/05 20:45:35 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 15:07:35 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,12 @@ int	char_to_digit(char c, int base)
 }
 
 // Initialize conversion context
-void	init_conv_ctx(t_conv_ctx *ctx, const char *nptr, char **endptr,
-							int base, t_int_type type)
+void	init_conv_ctx(t_conv_ctx *ctx, const char *nptr,
+					int base, t_int_type type)
 {
 	ctx->ptr = nptr;
 	ctx->start = nptr;
-	ctx->endptr = endptr;
+	ctx->endptr = NULL;
 	ctx->base = base;
 	ctx->type = type;
 	ctx->type_info = *get_type_info(type);

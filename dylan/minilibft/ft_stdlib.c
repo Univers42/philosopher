@@ -6,7 +6,7 @@
 /*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/05 14:09:38 by dlesieur          #+#    #+#             */
-/*   Updated: 2025/10/15 12:46:26 by dlesieur         ###   ########.fr       */
+/*   Updated: 2025/10/19 15:11:07 by dlesieur         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,8 @@ int64_t	ft_strto(const char *nptr, char **endptr, int base, t_int_type type)
 			*endptr = (char *)nptr;
 		return (0);
 	}
-	init_conv_ctx(&ctx, nptr, endptr, base, type);
+	ctx.endptr = endptr;
+	init_conv_ctx(&ctx, nptr, base, type);
 	if (ctx.state == STATE_INIT)
 		ctx.state = STATE_WHITESPACE;
 	while (ctx.state != STATE_DONE && ctx.state != STATE_ERROR)

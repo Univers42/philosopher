@@ -1,8 +1,10 @@
 CC		:=	cc
 CFLAGS	:=	-Wall -Wextra -Werror -Wshadow
 NAME	:=	libminft.a
-SRCS	:=	ft_ctype.c ft_memory.c ft_stdio.c ft_stdlib_stub1.c ft_stdlib_stub2.c ft_stdlib_stub3.c ft_stdlib_stub4.c \
-			ft_stdlib.c ft_string.c ft_time.c helpers_conv.c states_conv.c
+SRCS	:=	ft_ctype.c ft_memory.c ft_stdio.c ft_stdlib_stub1.c ft_stdlib_stub2.c \
+			ft_stdlib_stub3.c ft_stdlib_stub4.c ft_stdlib.c ft_string.c ft_time.c \
+			ft_time_helper1.c ft_time_helper2.c ft_time_helper3.c ft_time_helper4.c \
+			helpers_conv.c states_conv.c
 OBJ_DIR := obj
 OBJS	:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 RM		:=	rm -rf

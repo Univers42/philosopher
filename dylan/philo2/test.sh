@@ -32,12 +32,12 @@ declare -a TESTS=(
 
     # Edge cases - very tight timing
     "2 310 200 100|SHOULD_DIE|2|Two philosophers - very tight (310ms die, 200ms eat)"
-    "3 310 100 100|NO_DEATH|3|Three philosophers - exact minimum timing"
-    "4 310 100 100|NO_DEATH|3|Four philosophers - exact minimum timing"
-    "5 310 100 100|NO_DEATH|3|Five philosophers - exact minimum timing"
+    "3 310 103 140|NO_DEATH|3|Three philosophers - exact minimum timing"
+    "4 130 60 60|NO_DEATH|3|Four philosophers - exact minimum timing"
+    "5 310 103 103|NO_DEATH|3|Five philosophers - exact minimum timing"
 
     # Edge cases - death timing validation
-    "2 400 200 200|SHOULD_DIE|3|Two philosophers - should die at ~400ms"
+    "2 400 200 200|SHOULD_DIE|3|Two philosophers - should die at ~400ms" ## sometimes it dies but later this one is from my own program 
     "3 500 200 200|SHOULD_DIE|3|Three philosophers - should die at ~500ms"
     "4 200 205 200|SHOULD_DIE|2|Four philosophers - impossible timing (eat > die)"
 
@@ -50,7 +50,7 @@ declare -a TESTS=(
     "2 800 200 200 5|COMPLETE_MEALS|10|Two philosophers - 5 meals each"
     "3 800 200 200 5|COMPLETE_MEALS|10|Three philosophers - 5 meals each"
     "4 410 200 200 10|COMPLETE_MEALS|15|Four philosophers - 10 meals each"
-    "5 800 200 200 7|COMPLETE_MEALS|15|Five philosophers - 7 meals each"
+    "5 600 150 150 7|COMPLETE_MEALS|15|Five philosophers - 7 meals each"
 
     # Single meal edge cases
     "2 800 200 200 1|COMPLETE_MEALS|5|Two philosophers - 1 meal only"
@@ -58,14 +58,14 @@ declare -a TESTS=(
 
     # High philosopher count stress tests
     "100 800 200 200|NO_DEATH|3|Stress: 100 philosophers"
-    "150 800 200 200|NO_DEATH|3|Stress: 150 philosophers"
+    "155 800 200 200|NO_DEATH|3|Stress: 150 philosophers"
     "199 310 103 103|NO_DEATH|3|Stress: 199 philosophers edge case"
     "200 800 200 200|NO_DEATH|3|Stress: 200 philosophers"
     "200 600 200 200 10|NO_DEATH|15|Stress: 200 philosophers with 10 meals"
     "200 180 60 60 15|NO_DEATH|15|Stress: 200 philosophers fast pace"
 
     # Extreme timing cases
-    "4 400 100 100|NO_DEATH|3|Tight window - 400ms die, 200ms cycle"
+    "4 410 200 200|NO_DEATH|3|Tight window - 400ms die, 200ms cycle"
     "5 400 100 100|NO_DEATH|3|Tight window - 5 philosophers"
     "6 400 100 100|NO_DEATH|3|Tight window - 6 philosophers"   
 )
