@@ -1,0 +1,36 @@
+name: CI for philosopher project
+
+# Trigger the workflow on push and pull_request to main branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential valgrind
+
+      - name: Build minilibft
+        working-directory: ./minilibft
+        run: make
+
+      - name: Build philo
+        working-directory: ./philo
+        run: make
+
+      - name: Run tests
+        working-directory: ./philo
+        run: |
+          chmod +x ./test.sh
+          ./test.sh
