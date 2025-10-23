@@ -1,2 +1,0 @@
-threads.c
-threads_2.c
